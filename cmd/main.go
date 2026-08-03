@@ -8,16 +8,19 @@ import (
 	"net/http"
 	"os"
 	"rest/api"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// path := os.Getenv("PATH")
-	// fmt.Println("Path:", path)
+	
+	err := godotenv.Load()
 
 	db, err := sql.Open("mysql", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.Close()
 
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
@@ -29,8 +32,8 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /user", app.AddUserHandler)
-	// http.HandleFunc("GET /health", api.HealthHandler)
 	mux.HandleFunc("GET /health", api.HealthHandler)
+	mux.HandleFunc("GET /users", app.GetUsers)
 
 	fmt.Println("Server starting on :8080")
 	http.ListenAndServe("localhost:8080", mux)
