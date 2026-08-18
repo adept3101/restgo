@@ -1,34 +1,20 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
-	"log"
 	"net/http"
-	"os"
 	"rest/api"
 )
 
 func main() {
-
-	err := godotenv.Load()
-
-	db, err := sql.Open("mysql", os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	db := api.ConnDB()
 
 	defer db.Close()
-
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
 
 	app := &api.App{
 		DB: db,
 	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", api.HealthHandler)

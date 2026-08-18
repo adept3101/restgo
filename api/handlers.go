@@ -11,6 +11,7 @@ import (
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Response{
 		Message: "API is helthy",
 		Status:  200,
@@ -86,6 +87,12 @@ func selectUsers(db *sql.DB) ([]User, error) {
 	rows, err := db.Query(
 		"SELECT * FROM users;",
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
 	usr := []User{}
 
 	for rows.Next() {
@@ -97,23 +104,32 @@ func selectUsers(db *sql.DB) ([]User, error) {
 			log.Println(err)
 			return nil, err
 		}
-		defer rows.Close()
 		usr = append(usr, u)
 	}
+
+	if err := rows.Err(); err != nil{
+		return nil, err
+	}
+
 	return usr, err
 }
 
 func (a *App) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
-	user, err := selectUsers(a.DB)
+	users, err := selectUsers(a.DB)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Users not found", http.StatusNotFound)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	// w.WriteHeader(http.StatusOK)
+	response := UsersResponse {
+		Message: "User found",
+		Status: http.StatusOK,
+		Data: users,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 func deleteUser(db *sql.DB, id uint8) error {
@@ -154,7 +170,7 @@ func (a *App) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(usr)
 }
